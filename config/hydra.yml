@@ -1,0 +1,47 @@
+
+# https://www.ory.sh/docs/hydra/reference/configuration
+
+serve:
+  cookies:
+    same_site_mode: Lax
+
+urls:
+  self:
+    issuer: http://127.0.0.1:4444
+  consent: http://127.0.0.1:5000/consent
+  login: http://127.0.0.1:5000/login
+  logout: http://127.0.0.1:5000/logout
+
+secrets:
+  system:
+    - SboVuZJJ9DxfCNYx2frOc5qVEoh8iiEOo
+
+log:
+  leak_sensitive_values: true
+  format: json
+
+strategies:
+  # STRATEGIES_ACCESS_TOKEN=jwt jwt is a bad idea, see https://www.ory.sh/docs/hydra/advanced#json-web-tokens
+  access_token: jwt 
+  scope: wildcard
+
+# oidc:
+#   subject_identifiers:
+#     supported_types:
+#       - pairwise
+#       - public
+#     pairwise:
+#       salt: J5aBxtNolBVV2JVchENGHE0V7GJQ361Q
+
+# export SECRETS_SYSTEM=$(export LC_CTYPE=C; cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+
+# -e "DSN=memory" \
+# -e "URLS_SELF_ISSUER=http://127.0.0.1:4444/" \
+# -e "URLS_CONSENT=http://127.0.0.1:5000/consent" \
+# -e "URLS_LOGIN=http://127.0.0.1:5000/login" \
+# -e "LOG_LEAK_SENSITIVE_VALUES=true" \
+# -e "LOG_FORMAT=json_pretty" \
+# -e "OAUTH2_EXPOSE_INTERNAL_ERRORS=true" \
+# -e "STRATEGIES_ACCESS_TOKEN=jwt" \
+#  -e "STRATEGIES_ACCESS_TOKEN=jwt" \
+#  STRATEGIES_ACCESS_TOKEN=jwt jwt is a bad idea, see https://www.ory.sh/docs/hydra/advanced#json-web-tokens

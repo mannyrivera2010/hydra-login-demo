@@ -1,0 +1,96 @@
+###########################################################################
+#######             FOR DEMONSTRATION PURPOSES ONLY                 #######
+###########################################################################
+#                                                                         #
+# If you have not yet read the tutorial, do so now:                       #
+#  https://www.ory.sh/docs/hydra/5min-tutorial                            #
+#                                                                         #
+# This set up is only for demonstration purposes. The login               #
+# endpoint can only be used if you follow the steps in the tutorial.      #
+#                                                                         #
+###########################################################################
+version: '3.7'
+services:
+  prometheus:
+    image: prom/prometheus:v2.12.0
+    ports:
+      - "9090:9090"
+    depends_on:
+      - hydra
+    command:
+      --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./hydra_prometheus_config.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - intranet
+
+  hydra:
+    image: oryd/hydra:v1.10.7-sqlite
+    ports:
+      - "4444:4444" # Public port
+      - "4445:4445" # Admin port
+      - "5555:5555" # Port for hydra token user
+    command: serve -c /etc/config/hydra/hydra.yml all --dangerous-force-http
+    volumes:
+      - type: volume
+        source: hydra-sqlite
+        target: /var/lib/sqlite
+        read_only: false
+      - type: bind
+        source: ./config/
+        target: /etc/config/hydra
+    environment:
+      - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true
+    restart: unless-stopped
+    depends_on:
+      - hydra-migrate
+    networks:
+      - intranet
+   
+  hydra-migrate:
+    # oryd/hydra:v1.11.8 does not have sqlite
+    # https://github.com/ory/hydra - a new docker image can be created by cloning and recreating image
+    image: oryd/hydra:v1.10.7-sqlite 
+    environment:
+      - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true
+    command: migrate -c /etc/config/hydra/hydra.yml sql -e --yes
+    volumes:
+      - type: volume
+        source: hydra-sqlite
+        target: /var/lib/sqlite
+        read_only: false
+      - type: bind
+        source: ./config/
+        target: /etc/config/hydra
+    # restart: on-failure
+    networks:
+      - intranet
+      
+  consent:
+    environment:
+      - HYDRA_ADMIN_URL=http://hydra:4445
+    image: oryd/hydra-login-consent-node:v1.11.8
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - intranet
+  
+  openid-provider:
+    environment:
+      - HYDRA_ADMIN_URL=http://hydra:4445
+    image: openid_provider:lastest
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: ./openid_provider/data
+        target: /app/data
+    networks:
+      - intranet
+
+networks:
+  intranet:
+volumes:
+  hydra-sqlite:

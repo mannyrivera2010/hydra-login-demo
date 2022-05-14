@@ -1,70 +1,67 @@
-Hydra login/consent provider - Python
-======================================
+# hydra-login-demo
+This repo is used to test openid flows.  It uses hydra and a custom python identity provider
 
-This is an example implementation for the User Login and Consent flow of 
-[ORY Hydra](https://www.ory.sh/docs/hydra/) version 1.7.x in Python.
+## python identity provider build
+Build Dockerfile for python identity provider
+```
+(cd openid_provider && docker build -t openid_provider:lastest .)
 
-**Requirements: Python >= 3.7**
-
-This example is using the official
-[ory-hydra-client](https://github.com/ory/sdk/tree/master/clients/hydra/python) Python library.
-
-Running locally
----------------
-
-Use the official Hydra Container image:
-
-```shell
-docker run \
-    -it \
-    --rm \
-    --network="host" \
-    -e "DSN=memory" \
-    -e "URLS_SELF_ISSUER=http://127.0.0.1:4444/" \
-    -e "URLS_CONSENT=http://127.0.0.1:5000/consent" \
-    -e "URLS_LOGIN=http://127.0.0.1:5000/login" \
-    -e "LOG_LEAK_SENSITIVE_VALUES=true" \
-    --name hydra \
-    -p 4445:4445 \
-    -p 4444:4444 \
-    oryd/hydra:v1.7 \
-    serve all --dangerous-force-http
+# Image will be run with docker-compose command no need to run individually 
+# docker run --rm --name openid-identity-provider -p 5000:5000 openid_provider:lastest
 ```
 
-Afterwards you can install the dependencies and run the example application:
-
-
-```shell
-$ pip install -r requirements.txt
-$ flask run
+## Commands to run hydra
+To run containers 
+```
+docker-compose -f hydra_quickstart.yml -f hydra_tracing.yml up --build --remove-orphans
 ```
 
+Create Oauth2 Client
+```
+sh client_create.sh
+```
+https://www.ory.sh/docs/hydra/cli/hydra-clients-create
 
-## Testing an example flow
+Run Token User Test Website
+```
+sh client_test.sh
+```
+https://www.ory.sh/docs/hydra/cli/hydra-token-user
 
-```sh
-docker exec hydra \
-    hydra clients create \
-    --endpoint http://127.0.0.1:4445 \
-    --id auth-code-client \
-    --secret secret \
-    --grant-types authorization_code,refresh_token \
-    --response-types code,id_token \
-    --scope openid,offline \
-    --callbacks http://127.0.0.1:5555/callback
+
+Clean up (https://docs.docker.com/compose/reference/down/)
+```
+docker-compose -f hydra_quickstart.yml down --volumes --remove-orphans 
+docker volume prune
 ```
 
-```sh
-docker exec hydra \
-    hydra token user \
-    --client-id auth-code-client \
-    --client-secret secret \
-    --endpoint http://127.0.0.1:4444/ \
-    --port 5555 \
-    --scope openid,offline \
-    --audience auth-code-client
+```
+# And check if it's running:
+docker logs ory-hydra-example--hydra
 ```
 
-See also the instructions in the
-[5 minute tutorial](https://www.ory.sh/docs/hydra/5min-tutorial) for testing
-the various [OAuth 2.0 grant types](https://oauth.net/2/grant-types/).
+## Links
+```
+# openid-configuration
+http://127.0.0.1:4444/.well-known/openid-configuration
+
+# jwks store
+http://127.0.0.1:4444/.well-known/jwks.json
+
+# Prometheus
+http://localhost:9090/
+
+# Jaeger UI end-to-end distributed tracing
+http://localhost:16686/
+```
+
+# Reference
+* https://github.com/westphahl/hydra-login-consent-python
+* https://github.com/ory/hydra
+* https://www.jaegertracing.io/
+* https://prometheus.io/
+* https://www.ory.sh/docs/hydra/advanced#json-web-tokens
+* https://docs.docker.com/config/containers/multi-service_container/
+* https://github.com/ory/sdk/tree/master/clients/hydra/python
+* https://openid.net/developers/specs/
+
